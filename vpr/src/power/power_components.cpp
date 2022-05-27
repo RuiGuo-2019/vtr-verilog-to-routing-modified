@@ -203,7 +203,7 @@ void power_usage_ff(t_power_usage* power_usage, float size, float D_prob, float 
  * 7 _Z_|
  *
  */
-void power_usage_lut(t_power_usage* power_usage, int lut_size, float transistor_size, char* SRAM_values, std::vector<float> input_prob, std::vector<float> input_dens, float period) {
+void power_usage_lut(t_power_usage* power_usage, int lut_size, float transistor_size, std::vector<char> SRAM_values, std::vector<float> input_prob, std::vector<float> input_dens, float period) {
     float** internal_prob;
     float** internal_dens;
     float** internal_v;

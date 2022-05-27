@@ -58,7 +58,6 @@ void power_print_spice_comparison() {
     unsigned int i, j;
     std::vector<float> dens;
     std::vector<float> prob;
-    char* SRAM_bits_chars;
     std::string SRAM_bits;
     int sram_idx;
     auto& power_ctx = g_vpr_ctx.mutable_power();
@@ -163,8 +162,8 @@ void power_print_spice_comparison() {
             }
             SRAM_bits[1 << j] = '\0';
         }
-        SRAM_bits_chars = new char[SRAM_bits.size()];
-        strcpy(SRAM_bits_chars, SRAM_bits.c_str());
+
+        std::vector<char>SRAM_bits_chars(SRAM_bits.begin(), SRAM_bits.end());
 
         dens.clear();
         prob.clear();
@@ -292,7 +291,6 @@ void power_print_spice_comparison() {
     //	 * power_ctx.solution_inf.T_crit);
     //}
     //free variables
-    delete[] SRAM_bits_chars;
 }
 
 static char binary_not(char c) {
@@ -340,15 +338,15 @@ float power_usage_mux_for_callibration(int num_inputs, float transistor_size) {
 
 float power_usage_lut_for_callibration(int num_inputs, float transistor_size) {
     t_power_usage power_usage;
-    char* SRAM_bits;
     int lut_size = num_inputs;
     std::vector<float> dens(lut_size, 1);
     std::vector<float> prob(lut_size, 0.5);
+    std::vector<char>SRAM_bits(((1 << lut_size) + 1));
 
     /* Initialize an SRAM pattern that guarantees the outputs toggle with
      * every input toggle.
      */
-    SRAM_bits = new char[((1 << lut_size) + 1)];
+
     for (int i = 1; i <= lut_size; i++) {
         if (i == 1) {
             SRAM_bits[0] = '1';
@@ -364,7 +362,6 @@ float power_usage_lut_for_callibration(int num_inputs, float transistor_size) {
     power_usage_lut(&power_usage, lut_size, transistor_size, SRAM_bits, prob,
                     dens, power_callib_period);
 
-    delete[] SRAM_bits;
 
     return power_sum_usage(&power_usage);
 }

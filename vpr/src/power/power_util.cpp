@@ -216,13 +216,13 @@ float calc_buffer_stage_effort(int N, float final_stage_size) {
  *  - LUT_size: The number of LUT inputs
  *  - truth_table: The logic terms saved from the BLIF file
  */
-char* alloc_SRAM_values_from_truth_table(int LUT_size,
+std::vector<char> alloc_SRAM_values_from_truth_table(int LUT_size,
                                          const AtomNetlist::TruthTable& truth_table) {
     int num_SRAM_bits = 1 << LUT_size;
 
     //SRAM value stored as a string of '0' and '1' characters
     // Initialize to all zeros
-    char* SRAM_values = (char*)vtr::calloc(num_SRAM_bits + 1, sizeof(char));
+    std::vector<char> SRAM_values(num_SRAM_bits + 1, 0);
     SRAM_values[num_SRAM_bits] = '\0';
 
     if (truth_table.empty()) {

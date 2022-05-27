@@ -137,7 +137,7 @@ static void power_usage_primitive(t_power_usage* power_usage, t_pb* pb, t_pb_gra
     if (strcmp(pb_graph_node->pb_type->blif_model, MODEL_NAMES) == 0) {
         /* LUT */
 
-        char* SRAM_values;
+        std::vector<char> SRAM_values;
         int LUT_size;
         int pin_idx;
 
@@ -166,7 +166,6 @@ static void power_usage_primitive(t_power_usage* power_usage, t_pb* pb, t_pb_gra
                         power_ctx.arch->LUT_transistor_size, SRAM_values,
                         input_probabilities, input_densities, power_ctx.solution_inf.T_crit);
         power_add_usage(power_usage, &sub_power_usage);
-        free(SRAM_values);
 
     } else if (strcmp(pb_graph_node->pb_type->blif_model, MODEL_LATCH) == 0) {
         /* Flip-Flop */

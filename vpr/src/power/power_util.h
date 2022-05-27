@@ -63,7 +63,7 @@ bool power_method_is_transistor_level(e_power_estimation_method estimation_metho
 bool power_method_is_recursive(e_power_estimation_method method);
 
 const char* transistor_type_name(e_tx_type type);
-char* alloc_SRAM_values_from_truth_table(int LUT_size,
+std::vector<char> alloc_SRAM_values_from_truth_table(int LUT_size,
                                          const AtomNetlist::TruthTable& truth_table);
 float clb_net_density(ClusterNetId net_idx);
 const char* interconnect_type_name(enum e_interconnect type);
