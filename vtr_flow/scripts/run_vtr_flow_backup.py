@@ -34,8 +34,6 @@ class VtrStageArgparseAction(argparse.Action):
             setattr(namespace, self.dest, vtr.VtrStage.YOSYS)
         elif value == "abc":
             setattr(namespace, self.dest, vtr.VtrStage.ABC)
-        elif value == "ace":
-            setattr(namespace, self.dest, vtr.VtrStage.ACE)
         elif value == "vpr":
             setattr(namespace, self.dest, vtr.VtrStage.VPR)
         elif value == "lec":
@@ -143,18 +141,10 @@ def vtr_command_argparser(prog=None):
 
     parser.add_argument(
         "-verbose",
-        default=True,
+        default=False,
         action="store_true",
         dest="verbose",
         help="Verbosity of the script.",
-    )
-
-    parser.add_argument(
-        "-enable_stage_rg",
-        default='10101',
-        action="store_true",
-        dest="Enable/Disable each steps ",
-        help="odinii, yosys, abc, ace, vpr",
     )
 
     #
@@ -493,7 +483,7 @@ def get_memory_usage(logfile):
 # pylint: enable=too-many-statements
 
 
-def vtr_command_main(arg_list, prog=None, enable_string=''):
+def vtr_command_main(arg_list, prog=None):
     """
     Running VTR with the specified arguemnts.
     """
@@ -555,7 +545,6 @@ def vtr_command_main(arg_list, prog=None, enable_string=''):
             relax_w_factor=args.relax_w_factor,
             check_route=args.check_route,
             check_place=args.check_place,
-            enable_string=enable_string,
         )
         error_status = "OK"
     except vtr.VtrError as error:
@@ -788,5 +777,4 @@ def except_vtr_error(error, expect_fail, verbose):
 
 
 if __name__ == "__main__":
-    # sys.exit(vtr_command_main(sys.argv[1:], prog=sys.argv[0]))
-    vtr_command_main(sys.argv[1:], prog=sys.argv[0])
+    sys.exit(vtr_command_main(sys.argv[1:], prog=sys.argv[0]))

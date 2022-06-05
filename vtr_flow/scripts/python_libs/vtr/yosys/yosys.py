@@ -17,6 +17,7 @@ FILE_TYPES = {
     ".json": "JSON",
     ".lib": "Liberty",
     ".ys": "RTLIL",
+    # ".bench": "Bench",
 }
 
 YOSYS_LIB_FILES = {
@@ -103,7 +104,8 @@ def run(
     temp_dir=Path("."),
     yosys_args="",
     log_filename="yosys.out",
-    yosys_exec=None,
+    # yosys_exec=None, # original
+    yosys_exec='/usr/local/bin/yosys',
     yosys_script=None,
     min_hard_mult_size=3,
     min_hard_adder_size=1,

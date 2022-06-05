@@ -56,6 +56,7 @@ def run(
     relax_w_factor=1.3,
     check_route=False,
     check_place=False,
+    enable_string='',
 ):
     """
     Runs the VTR CAD flow to map the specified circuit_file onto the target architecture_file
@@ -159,9 +160,18 @@ def run(
     post_ace_activity_file = temp_dir / (circuit_file.stem + ".act")
     pre_vpr_netlist = temp_dir / (circuit_file.stem + ".pre-vpr" + netlist_ext)
 
+
+    post_yosys_abc_netlist = temp_dir / (circuit_file.stem + ".yosys.abc" + netlist_ext)
+    post_yosys_ace_netlist = temp_dir / (circuit_file.stem + ".yosys.ace" + netlist_ext)
+    post_yosys_ace_activity_file = temp_dir / (circuit_file.stem + ".yosys.act")
+    yosys_pre_vpr_netlist = temp_dir / (circuit_file.stem + ".yosys.pre-vpr" + netlist_ext)
+
+
+
     # If the user provided a .blif or .eblif netlist, we use that as the baseline for LEC
     # (ABC can't LEC behavioural verilog)
     lec_base_netlist = circuit_file.name if "blif" in circuit_file.suffixes else None
+    yosys_lec_base_netlist = circuit_file.name if "blif" in circuit_file.suffixes else None
     # Reference netlist for LEC
 
     gen_postsynthesis_netlist = temp_dir / (circuit_file.stem + "_post_synthesis" + netlist_ext)
@@ -189,150 +199,234 @@ def run(
     #
     # RTL Elaboration & Synthesis (ODIN-II)
     #
-    if should_run_stage(VtrStage.ODIN, start_stage, end_stage) and circuit_file.suffixes != ".blif":
-        vtr.odin.run(
-            architecture_copy,
-            next_stage_netlist,
-            include_files,
-            output_netlist=post_odin_netlist,
-            command_runner=command_runner,
-            temp_dir=temp_dir,
-            odin_args=odin_args,
-            odin_config=odin_config,
-            min_hard_mult_size=min_hard_mult_size,
-            min_hard_adder_size=min_hard_adder_size,
-        )
 
-        next_stage_netlist = post_odin_netlist
 
-        lec_base_netlist = post_odin_netlist if not lec_base_netlist else lec_base_netlist
+    if('1' == enable_string[0]):
+        if should_run_stage(VtrStage.ODIN, start_stage, end_stage) and circuit_file.suffixes != ".blif":
+            vtr.odin.run(
+                architecture_copy,
+                # next_stage_netlist, # original
+                circuit_copy,
+                include_files,
+                output_netlist=post_odin_netlist,
+                command_runner=command_runner,
+                temp_dir=temp_dir,
+                odin_args=odin_args,
+                odin_config=odin_config,
+                min_hard_mult_size=min_hard_mult_size,
+                min_hard_adder_size=min_hard_adder_size,
+            )
+
+            next_stage_netlist = post_odin_netlist
+
+            lec_base_netlist = post_odin_netlist if not yosys_lec_base_netlist else yosys_lec_base_netlist
+
+
+
     #
     # RTL Elaboration & Synthesis (YOSYS)
     #
-    elif should_run_stage(VtrStage.YOSYS, start_stage, end_stage):
-        vtr.yosys.run(
-            architecture_copy,
-            next_stage_netlist,
-            include_files,
-            output_netlist=post_yosys_netlist,
-            command_runner=command_runner,
-            temp_dir=temp_dir,
-            yosys_args=yosys_args,
-            yosys_script=yosys_script,
-            min_hard_mult_size=min_hard_mult_size,
-            min_hard_adder_size=min_hard_adder_size,
-        )
+    if('1' == enable_string[1]):
+        if should_run_stage(VtrStage.YOSYS, start_stage, end_stage):
+        # elif should_run_stage(VtrStage.YOSYS, start_stage, end_stage): # original
+            vtr.yosys.run(
+                architecture_copy,
+                # next_stage_netlist, # original
+                circuit_copy,
+                include_files,
+                output_netlist=post_yosys_netlist,
+                command_runner=command_runner,
+                temp_dir=temp_dir,
+                yosys_args=yosys_args,
+                yosys_script=yosys_script,
+                min_hard_mult_size=min_hard_mult_size,
+                min_hard_adder_size=min_hard_adder_size,
+            )
 
-        next_stage_netlist = post_yosys_netlist
+            next_yosys_stage_netlist = post_yosys_netlist
 
-        lec_base_netlist = post_yosys_netlist if not lec_base_netlist else lec_base_netlist
+            yosys_lec_base_netlist = post_yosys_netlist if not yosys_lec_base_netlist else yosys_lec_base_netlist
 
     #
     # Logic Optimization & Technology Mapping
     #
-    if should_run_stage(VtrStage.ABC, start_stage, end_stage):
-        vtr.abc.run(
-            architecture_copy,
-            next_stage_netlist,
-            output_netlist=post_abc_netlist,
-            command_runner=command_runner,
-            temp_dir=temp_dir,
-            abc_args=abc_args,
-            keep_intermediate_files=keep_intermediate_files,
-            use_old_abc_script=use_old_abc_script,
-        )
+    if('1' == enable_string[2]):
+        if should_run_stage(VtrStage.ABC, start_stage, end_stage):
+            vtr.abc.run(
+                architecture_copy,
+                next_stage_netlist,
+                output_netlist=post_abc_netlist,
+                command_runner=command_runner,
+                temp_dir=temp_dir,
+                abc_args=abc_args,
+                keep_intermediate_files=keep_intermediate_files,
+                use_old_abc_script=use_old_abc_script,
+            )
 
-        next_stage_netlist = post_abc_netlist
-        lec_base_netlist = post_abc_netlist if not lec_base_netlist else lec_base_netlist
+            next_stage_netlist = post_abc_netlist
+            lec_base_netlist = post_abc_netlist if not lec_base_netlist else lec_base_netlist
+        
+        if(('1' == enable_string[1]) and (should_run_stage(VtrStage.ABC, start_stage, end_stage))):
+            vtr.abc.run(
+                architecture_copy,
+                next_yosys_stage_netlist,
+                output_netlist=post_yosys_abc_netlist,
+                command_runner=command_runner,
+                temp_dir=temp_dir,
+                abc_args=abc_args,
+                keep_intermediate_files=keep_intermediate_files,
+                use_old_abc_script=use_old_abc_script,
+            )
+            next_yosys_stage_netlist = post_yosys_abc_netlist
+            yosys_lec_base_netlist = post_yosys_abc_netlist if not yosys_lec_base_netlist else yosys_lec_base_netlist
 
     #
     # Power Activity Estimation
     #
-    if power_tech_file:
-        # The user provided a tech file, so do power analysis
+    if('1' == enable_string[3]):
+        if power_tech_file:
+            # The user provided a tech file, so do power analysis
 
-        if should_run_stage(VtrStage.ACE, start_stage, end_stage):
-            vtr.ace.run(
-                next_stage_netlist,
-                old_netlist=post_odin_netlist,
-                output_netlist=post_ace_netlist,
-                output_activity_file=post_ace_activity_file,
-                command_runner=command_runner,
-                temp_dir=temp_dir,
-            )
+            if should_run_stage(VtrStage.ACE, start_stage, end_stage):
+                vtr.ace.run(
+                    next_stage_netlist,
+                    old_netlist=post_odin_netlist,
+                    output_netlist=post_ace_netlist,
+                    output_activity_file=post_ace_activity_file,
+                    log_filename="odin.ace.out",
+                    command_runner=command_runner,
+                    temp_dir=temp_dir,
+                )
 
-        if not keep_intermediate_files:
-            next_stage_netlist.unlink()
-            post_odin_netlist.unlink()
+            if not keep_intermediate_files:
+                next_stage_netlist.unlink()
+                post_odin_netlist.unlink()
 
-        # Use ACE's output netlist
-        next_stage_netlist = post_ace_netlist
-        lec_base_netlist = post_ace_netlist if not lec_base_netlist else lec_base_netlist
+            # Use ACE's output netlist
+            next_stage_netlist = post_ace_netlist
+            lec_base_netlist = post_ace_netlist if not lec_base_netlist else lec_base_netlist
 
-        # Enable power analysis in VPR
-        vpr_args["power"] = True
-        vpr_args["tech_properties"] = str(power_tech_file.resolve())
+            # Enable power analysis in VPR
+            vpr_args["power"] = True
+            vpr_args["tech_properties"] = str(power_tech_file.resolve())
+
+            if(('1' == enable_string[1]) and (should_run_stage(VtrStage.ACE, start_stage, end_stage))):
+                vtr.ace.run(
+                    next_yosys_stage_netlist,
+                    old_netlist=post_yosys_netlist,
+                    output_netlist=post_yosys_ace_netlist,
+                    output_activity_file=post_yosys_ace_activity_file,
+                    log_filename="yosys.ace.out",
+                    command_runner=command_runner,
+                    temp_dir=temp_dir,
+                )
+
+                if not keep_intermediate_files:
+                    next_stage_netlist.unlink()
+                    post_yosys_netlist.unlink()
+
+                # Use ACE's output netlist
+                next_yosys_stage_netlist = post_yosys_ace_netlist
+                yosys_lec_base_netlist = post_yosys_ace_netlist if not yosys_lec_base_netlist else yosys_lec_base_netlist
 
     #
     # Pack/Place/Route
     #
-    if should_run_stage(VtrStage.VPR, start_stage, end_stage):
-        # Copy the input netlist for input to vpr
-        shutil.copyfile(str(next_stage_netlist), str(pre_vpr_netlist))
-        route_fixed_w = "route_chan_width" in vpr_args
-        if (check_route or check_place) and not route_fixed_w:
-            vpr_args["route_chan_width"] = 300
-            route_fixed_w = True
+    if('1' == enable_string[4]):
+        if should_run_stage(VtrStage.VPR, start_stage, end_stage):
+            # Copy the input netlist for input to vpr
+            shutil.copyfile(str(next_stage_netlist), str(pre_vpr_netlist))
+            if('1' == enable_string[1]):
+                shutil.copyfile(str(next_yosys_stage_netlist), str(yosys_pre_vpr_netlist))
+            route_fixed_w = "route_chan_width" in vpr_args
+            if (check_route or check_place) and not route_fixed_w:
+                vpr_args["route_chan_width"] = 300
+                route_fixed_w = True
 
-        if route_fixed_w:
-            # The User specified a fixed channel width
-            do_second_run = False
-            second_run_args = vpr_args
+            if route_fixed_w:
+                # The User specified a fixed channel width
+                do_second_run = False
+                second_run_args = vpr_args
 
-            if "write_rr_graph" in vpr_args or "analysis" in vpr_args or "route" in vpr_args:
-                do_second_run = True
+                if "write_rr_graph" in vpr_args or "analysis" in vpr_args or "route" in vpr_args:
+                    do_second_run = True
+                
+                ori_args = vpr_args.copy()
 
-            vtr.vpr.run(
-                architecture_copy,
-                pre_vpr_netlist,
-                circuit_copy.stem,
-                command_runner=command_runner,
-                temp_dir=temp_dir,
-                vpr_args=vpr_args,
-            )
-            if do_second_run:
-                # Run vpr again with additional parameters.
-                # This is used to ensure that files generated by VPR can be re-loaded by it
-                rr_graph_ext = (
-                    Path(second_run_args["write_rr_graph"]).suffix
-                    if "write_rr_graph" in second_run_args
-                    else ".xml"
-                )
-                if check_place:
-                    second_run_args["route"] = True
-                if check_route:
-                    second_run_args["analysis"] = True
-                vtr.vpr.run_second_time(
+                vtr.vpr.run(
                     architecture_copy,
                     pre_vpr_netlist,
                     circuit_copy.stem,
                     command_runner=command_runner,
                     temp_dir=temp_dir,
-                    second_run_args=second_run_args,
-                    rr_graph_ext=rr_graph_ext,
+                    vpr_args=vpr_args,
                 )
-        else:
-            # First find minW and then re-route at a relaxed W
-            vtr.vpr.run_relax_w(
-                architecture_copy,
-                pre_vpr_netlist,
-                circuit_copy.stem,
-                command_runner=command_runner,
-                relax_w_factor=relax_w_factor,
-                temp_dir=temp_dir,
-                vpr_args=vpr_args,
-            )
-        lec_base_netlist = pre_vpr_netlist if not lec_base_netlist else lec_base_netlist
+
+                print("odin ii --> vpr, finished!")
+
+                if('1' == enable_string[1]):
+                    vtr.vpr.run(
+                        architecture_copy,
+                        yosys_pre_vpr_netlist,
+                        circuit_copy.stem,
+                        command_runner=command_runner,
+                        temp_dir=temp_dir,
+                        vpr_args=ori_args,
+                    )
+
+                    print("yosys --> vpr, finished!")
+
+                if do_second_run:
+                    # Run vpr again with additional parameters.
+                    # This is used to ensure that files generated by VPR can be re-loaded by it
+                    rr_graph_ext = (
+                        Path(second_run_args["write_rr_graph"]).suffix
+                        if "write_rr_graph" in second_run_args
+                        else ".xml"
+                    )
+                    if check_place:
+                        second_run_args["route"] = True
+                    if check_route:
+                        second_run_args["analysis"] = True
+                    vtr.vpr.run_second_time(
+                        architecture_copy,
+                        pre_vpr_netlist,
+                        circuit_copy.stem,
+                        command_runner=command_runner,
+                        temp_dir=temp_dir,
+                        second_run_args=second_run_args,
+                        rr_graph_ext=rr_graph_ext,
+                    )
+            else:
+                ori_args = vpr_args.copy()
+                # First find minW and then re-route at a relaxed W
+                vtr.vpr.run_relax_w(
+                    architecture_copy,
+                    pre_vpr_netlist,
+                    circuit_copy.stem,
+                    command_runner=command_runner,
+                    relax_w_factor=relax_w_factor,
+                    temp_dir=temp_dir,
+                    logfile_base="vpr.odin",
+                    vpr_args=vpr_args,
+                )
+
+                if('1' == enable_string[1]):
+                    vtr.vpr.run_relax_w(
+                        architecture_copy,
+                        yosys_pre_vpr_netlist,
+                        circuit_copy.stem,
+                        command_runner=command_runner,
+                        relax_w_factor=relax_w_factor,
+                        temp_dir=temp_dir,
+                        logfile_base="vpr.yosys",
+                        vpr_args=ori_args,
+                    )
+
+
+            lec_base_netlist = pre_vpr_netlist if not lec_base_netlist else lec_base_netlist
+            if('1' == enable_string[1]):
+                yosys_lec_base_netlist = yosys_pre_vpr_netlist if not yosys_lec_base_netlist else yosys_lec_base_netlist
 
     #
     # Logical Equivalence Checks (LEC)

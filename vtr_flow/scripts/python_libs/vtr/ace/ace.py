@@ -1,6 +1,7 @@
 """
     Module to run ACE with its various options
 """
+import os
 from pathlib import Path
 from vtr import verify_file, CommandRunner, paths
 
@@ -69,6 +70,11 @@ def run(
         cmd, temp_dir=temp_dir, log_filename="ace_clk_extraction.out", indent_depth=1
     )
     ace_clk = ""
+    #=============================================
+    if(False == os.path.exists(ace_clk_file)):
+        with ace_clk_file.open("a") as file:
+            file.write("none")
+    #=============================================
     with ace_clk_file.open("r") as file:
         ace_clk = file.readline().strip("\n")
     cmd = [

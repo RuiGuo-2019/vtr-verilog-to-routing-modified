@@ -129,7 +129,12 @@ class CommandRunner:
 
         # Echo the command?
         if self._echo_cmd:
-            print(cmd)
+            # print(cmd)
+            strCmd = ""
+            for tempargs in cmd:
+                strCmd += tempargs + ' '
+            strCmd += '\n'
+            print(strCmd)
 
         # Begin timing
         start_time = time.time()

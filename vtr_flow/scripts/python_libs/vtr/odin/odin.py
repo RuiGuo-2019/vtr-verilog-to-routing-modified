@@ -9,13 +9,8 @@ import xml.etree.ElementTree as ET
 import vtr
 
 # supported input file type by Odin
-FILE_TYPES = {
-    ".v": "verilog",
-    ".vh": "verilog",
-    ".sv": "verilog",
-    ".svh": "verilog",
-    ".blif": "blif",
-}
+# FILE_TYPES = {".v": "verilog", ".vh": "verilog", ".blif": "blif", ".bench": "bench"}
+FILE_TYPES = {".v": "verilog", ".vh": "verilog", ".blif": "blif"}
 
 
 def create_circuits_list(main_circuit, include_files):
